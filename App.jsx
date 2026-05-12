@@ -1,9 +1,12 @@
+import { useState } from "react";
 import {
   AlertCircle,
   Brain,
   CalendarCheck,
   CheckCircle,
+  ChevronDown,
   ChevronRight,
+  ChevronUp,
   ExternalLink,
   HeartHandshake,
   HeartPulse,
@@ -754,47 +757,127 @@ function CampusResourceBlock({ risk }) {
 }
 
 function RiskSections() {
+  const [openRiskIds, setOpenRiskIds] = useState({});
+
+  const toggleRisk = (riskId) => {
+    setOpenRiskIds((current) => ({
+      ...current,
+      [riskId]: !current[riskId],
+    }));
+  };
+
   return (
     <section className="border-t border-kstate-line bg-gradient-to-b from-kstate-mist to-zinc-50 py-20 md:py-24">
       <div className="section-shell space-y-16 md:space-y-20">
-        {risks.map((risk, index) => (
-          <article
-            key={risk.id}
-            id={risk.id}
-            className="scroll-mt-28 overflow-hidden rounded-2xl border border-kstate-line bg-white shadow-soft"
-          >
-            <div className="border-b border-kstate-line bg-kstate-mist/60 px-6 py-8 sm:px-10 sm:py-9">
-              <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
-                <div className="max-w-3xl">
-                  <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-kstate-purple">
-                    Topic {index + 1} of 6
-                  </p>
-                  <h2 className="font-display mt-3 text-2xl font-black leading-tight tracking-tight text-kstate-ink sm:text-3xl lg:text-[2rem]">
-                    {risk.title}
-                  </h2>
-                </div>
-                <span
-                  role="img"
-                  aria-label={risk.iconLabel}
-                  className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-xl ${risk.accent}`}
-                >
-                  <risk.icon className="h-7 w-7" aria-hidden="true" />
-                </span>
-              </div>
-            </div>
+        {risks.map((risk, index) => {
+          const isOpen = Boolean(openRiskIds[risk.id]);
+          const detailsId = `${risk.id}-details`;
+          const ChevronIcon = isOpen ? ChevronUp : ChevronDown;
 
-            <div className="grid gap-px bg-kstate-line sm:grid-cols-2 lg:grid-cols-2">
-              <InfoBlock title="Overview" content={risk.overview} />
-              <ListBlock title="Why it matters" items={risk.why} />
-              <ListBlock title="Common risk factors" items={risk.causes} />
-              <InfoBlock title="Public health lens" content={risk.connection} />
-              <ListBlock title="What you can do" items={risk.actions} />
-              <CampusResourceBlock risk={risk} />
-            </div>
-          </article>
-        ))}
+          return (
+            <article
+              key={risk.id}
+              id={risk.id}
+              className="scroll-mt-28 overflow-hidden rounded-2xl border border-kstate-line bg-white shadow-soft"
+            >
+              <div className="border-b border-kstate-line bg-kstate-mist/60 px-6 py-8 sm:px-10 sm:py-9">
+                <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+                  <div className="max-w-3xl">
+                    <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-kstate-purple">
+                      Topic {index + 1} of 6
+                    </p>
+                    <h2 className="font-display mt-3 text-2xl font-black leading-tight tracking-tight text-kstate-ink sm:text-3xl lg:text-[2rem]">
+                      {risk.title}
+                    </h2>
+                  </div>
+                  <span
+                    role="img"
+                    aria-label={risk.iconLabel}
+                    className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-xl ${risk.accent}`}
+                  >
+                    <risk.icon className="h-7 w-7" aria-hidden="true" />
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid gap-px bg-kstate-line sm:grid-cols-2 lg:grid-cols-2">
+                <InfoBlock title="Overview" content={risk.overview} />
+                <RiskSnapshotBlock risk={risk} />
+              </div>
+
+              <div className="border-t border-kstate-line bg-white px-6 py-5 sm:px-8">
+                <button
+                  type="button"
+                  aria-expanded={isOpen}
+                  aria-controls={detailsId}
+                  aria-label={`${isOpen ? "Collapse" : "Expand"} additional details for ${risk.shortTitle}`}
+                  onClick={() => toggleRisk(risk.id)}
+                  className="focus-ring inline-flex items-center justify-center rounded-lg bg-kstate-purple px-5 py-3 text-sm font-extrabold text-white shadow-sm transition hover:bg-kstate-deep"
+                >
+                  I want to learn more
+                  <ChevronIcon className="ml-2 h-4 w-4 shrink-0" aria-hidden="true" />
+                </button>
+              </div>
+
+              {isOpen && (
+                <div
+                  id={detailsId}
+                  className="grid gap-px border-t border-kstate-line bg-kstate-line sm:grid-cols-2 lg:grid-cols-2"
+                >
+                  <ListBlock title="Why it matters" items={risk.why} />
+                  <ListBlock title="Common risk factors" items={risk.causes} />
+                  <InfoBlock title="Public health lens" content={risk.connection} />
+                  <ListBlock title="What you can do" items={risk.actions} />
+                  <CampusResourceBlock risk={risk} />
+                  {risk.takeaway && (
+                    <InfoBlock title="Student takeaway" content={risk.takeaway} />
+                  )}
+                </div>
+              )}
+            </article>
+          );
+        })}
       </div>
     </section>
+  );
+}
+
+function RiskSnapshotBlock({ risk }) {
+  const snapshotItems = risk.snapshot
+    ? [
+        ["Risk level", risk.snapshot.riskLevel],
+        ["Main concern", risk.snapshot.mainConcern],
+        ["Prevention focus", risk.snapshot.preventionFocus],
+      ].filter(([, value]) => Boolean(value))
+    : [];
+
+  return (
+    <div className="bg-white p-6 sm:p-8">
+      <h3 className="text-xs font-extrabold uppercase tracking-[0.18em] text-zinc-500">
+        Risk snapshot
+      </h3>
+      {snapshotItems.length > 0 ? (
+        <dl className="mt-4 grid gap-3">
+          {snapshotItems.map(([label, value]) => (
+            <div
+              key={label}
+              className="rounded-xl border border-kstate-line/80 bg-kstate-mist/60 p-4"
+            >
+              <dt className="text-xs font-extrabold uppercase tracking-[0.16em] text-kstate-purple">
+                {label}
+              </dt>
+              <dd className="mt-1 text-base font-bold leading-snug text-kstate-ink">
+                {value}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      ) : (
+        <p className="mt-3 text-base leading-relaxed text-zinc-700">
+          {risk.explorerSummary}
+        </p>
+      )}
+    </div>
   );
 }
 
